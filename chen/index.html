@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>time-series map</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <style>
+        .map-overlay {
+            font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+            position: absolute;
+            width: 25%;
+            top: 0;
+            left: 0;
+            padding: 10px;
+            opacity: 0.7;
+        }
+
+        .map-overlay .map-overlay-inner {
+            background-color: #fff;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+            padding: 4px 10px;
+            margin-bottom: 10px;
+        }
+
+        .map-overlay h2 {
+            line-height: 24px;
+            display: block;
+            margin: 0 0 10px;
+        }
+
+        .map-overlay .legend .bar {
+            height: 10px;
+            width: 100%;
+            background: linear-gradient(to right, #f3b344, #7f3121);
+        }
+
+        .map-overlay input {
+            background-color: transparent;
+            display: inline-block;
+            width: 100%;
+            position: relative;
+            margin: 0;
+            cursor: ew-resize;
+        }
+
+        @keyframes mymove {
+            from {
+                left: 100%;
+            }
+
+            to {
+                left: 50%;
+            }
+        }
+
+        @-webkit-keyframes mymove {
+            from {
+                left: 100%;
+            }
+
+            to {
+                left: 0;
+            }
+        }
+
+        @keyframes myleave {
+            from {
+                left: 50%;
+            }
+
+            to {
+                left: 100%;
+            }
+        }
+
+        @-webkit-keyframes myleave {
+            from {
+                left: 0;
+            }
+
+            to {
+                left: 100%;
+            }
+        }
+    </style>
+
+    <div id="map"></div>
+
+    <div class="map-overlay top">
+        <div class="map-overlay-inner">
+            <h2>Fossil CO2 emissions by country (territorial)</h2>
+            <label id="num"></label>
+            <input id="slider" type="range" min="0" max="60" step="1" value="0">
+        </div>
+        <div class="map-overlay-inner">
+            <div id="legend" class="legend">
+                <div class="bar"></div>
+                <div>Amount of CO2 emission(MtC/yr)</div>
+            </div>
+            <table>
+                <tr>
+                    <td>
+                        <p class="cityfly">Zoom To: <a href="#" class="citylink" id="chi">China</a> &nbsp;<a href="#" class="citylink" id="ger">Germany</a> &nbsp;<a
+                                href="#" class="citylink" id="aus">Australia</a> &nbsp;<a href="#" class="citylink"
+                                id="us">United States</a> &nbsp;<a href="#" class="citylink" id="lon">London</a> &nbsp;<a
+                                href="#" class="citylink" id="egy">Egypt</a> &nbsp;<a href="#" class="citylink"
+                                id="fra">France</a> &nbsp;<a href="#" class="citylink" id="col">Colombia</a></p>
+                    </td>
+                </tr>
+            </table>
+            <p class="credit">Cite as: Global Carbon Project. (2020). Supplemental data of Global Carbon Budget 2020 (Version 1.0) [Data set]. Global Carbon Project. <a
+                     href="https://doi.org/10.18160/gcp-2020" target='_blank'>Global Carbon Project</a>.</p>
+            
+                    <a class="close" id="showChart" href="#">showChart</a>
+                    <a class="close" id="closeChart" href="#">closeChart</a>
+        </div>
+
+        <div class="map-overlay-inner" id='chartOverlay' style="width:780px;height:370px;">
+
+            <div id="chartContainer">
+                <h2>Global CO2 emission line chart</h2>
+
+            </div>
+            <div style="width: 60px;position: relative;bottom: 200px;left: 200px;color: rebeccapurple;font-size: 14px;">Oil crisis.</div>
+            <div style="width: 60px;position: relative;bottom: 234px;left: 300px;color: rebeccapurple;font-size: 14px;">US savings and loans crisis</div>
+            <div style="width: 60px;position: relative;bottom: 367px;left: 424px;color: rebeccapurple;font-size: 14px;">Collapse of Soviet Union</div>
+            <div style="width: 60px;position: relative;bottom: 443px;left: 496px;color: rebeccapurple;font-size: 14px;">Kyoto Protocol</div>
+            <div style="width: 60px;position: relative;bottom: 534px;left: 615px;color: rebeccapurple;font-size: 14px;">Financial crisis</div>
+            <div style="width: 60px;position: relative;bottom: 600px;left: 694px;color: rebeccapurple;font-size: 14px;">Paris Agreement</div>
+            <div style="width: 60px;position: relative;bottom: 660px;left: 736px;color: rebeccapurple;font-size: 14px;">Covid-19</div>
+
+        </div>
+        
+
+    </div>
+
+    <script charset="utf-8" src="https://d3js.org/d3.v4.min.js"></script>
+    <script charset="utf-8" src="https://cdnjs.cloudflare.com/ajax/libs/dimple/2.3.0/dimple.latest.min.js"></script>
+
+    <script>
+
+        document.getElementById('showChart').onclick = function () {
+            document.getElementById('chartOverlay').style.animation = 'mymove 20s ease forwards';
+            document.getElementById('chartOverlay').style.display = 'block';
+        }
+        document.getElementById('closeChart').onclick = function () {
+            document.getElementById('chartOverlay').style.animation = 'myleave 2s ease forwards ';
+            setTimeout(function () {
+                document.getElementById('chartOverlay').style.display = 'none';
+            }, 500);
+        }
+
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZXJpY2NoZW4xMTEiLCJhIjoiY2tqdmR5NW5oMDd3bzJwcXUzbzl0NnhuZiJ9.H7nc2-mqix-sjkoAtIB-nA';
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/light-v10',
+            center: [31.4606, 20.7927],
+            zoom: 0.5
+        });
+
+        var dates = [];
+
+        var field = 'Field' + 2; //1959年
+
+        function filterBy(index) {
+            map.removeLayer('datas-circles')
+            addMyLayer(dates[index], 0.6)
+            document.getElementById('num').textContent = 1959 + index;
+        }
+
+        function addMyLayer(field, opacity) {
+            map.addLayer({
+                'id': 'datas-circles',
+                'type': 'circle',
+                'source': 'datas',
+                'paint': {
+                    'circle-color': [
+                        'interpolate',
+                        ['linear'],
+                        ['get', field],
+                        0,
+                        '#f3b344',
+                        300,
+                        '#7F3121'
+                    ],
+                    'circle-opacity': opacity,
+                    'circle-radius': [
+                        'interpolate',
+                        ['linear'],
+                        ['get', field],
+                        0,
+                        0,
+                        3,
+                        2,
+                        5,
+                        5,
+                        10,
+                        8,
+                        20,
+                        10,
+                        50,
+                        15,
+                        80,
+                        20,
+                        120,
+                        30
+                    ]
+                }
+            });
+        }
+
+        map.on('load', function () {
+            d3.json(
+                'http://47.115.201.167:8002/data/mapbox/mapbox5_points.geojson',
+                function (err, data) {
+                    if (err) throw err;
+                    dates = Object.keys(data.features[0].properties)
+                    dates = dates.filter(d => d.indexOf('Field') != -1)
+                    dates = dates.slice(1, dates.length)
+
+                    map.addSource('datas', {
+                        'type': 'geojson',
+                        data: data
+                    });
+
+                    addMyLayer(field, 0.6)
+
+                    map.addLayer({
+                        'id': 'datas-labels',
+                        'type': 'symbol',
+                        'source': 'datas',
+                        'layout': {
+                            'text-field': [
+                                'concat',
+                                ['to-string', ['get', 'Field1']],
+                                // ['to-string', ['get', 'Country/Region']]
+                            ],
+                            'text-font': [
+                                'Open Sans Bold',
+                                'Arial Unicode MS Bold'
+                            ],
+                            'text-size': 8
+                        },
+                        'paint': {
+                            'text-color': 'rgba(0,0,0,0.5)'
+                        }
+                    });
+
+                    document
+                        .getElementById('slider')
+                        .addEventListener('input', (e) => {
+                            var index = parseInt(e.target.value, 10);
+                            filterBy(index);
+                        });
+                }
+            );
+
+
+
+            //Event listener for the zoom to buttons created using a for loop and switch case statement to set lat and long
+            var x = document.getElementsByClassName('citylink');
+            var i;
+            for (i = 0; i < x.length; i++) {
+                x[i].addEventListener('click', function (e) {
+
+                    var lat, long;
+
+                    switch (e.target.id) {
+                        case "chi": long = 116.3956; lat = 39.9299; break;
+                        case "aus": long = 149.0229 ; lat = -35.2059; break;
+                        case "us": long = -100.0033; lat = 38.5324; break;
+                        case "lon": long = -0.1278; lat = 51.5074; break;
+                        case "egy": long = 31.14; lat = 27.01; break;
+                        case "fra": long = 2.20; lat = 46.52; break;
+                        case "col": long = -81.03; lat = 34.01; break;
+                        case "ger": long = 13.25; lat = 52.30; break;
+                    }
+
+                    map.flyTo({
+                        center: [long, lat],
+                        zoom: 4,
+                        speed: 0.6,
+                        pitch: 50
+                    });
+                });
+            }
+            //end.
+
+            //d3 折线图
+            var chartdata = [
+                { "City": "Hist", "Month": "202003", "Number": 1 },
+                { "City": "Hist", "Month": "202004", "Number": 2 },
+                { "City": "Hist", "Month": "202005", "Number": 3 },
+                { "City": "Hist", "Month": "202006", "Number": 4 },
+                { "City": "Hist", "Month": "202007", "Number": 5 },
+                { "City": "Hist", "Month": "202008", "Number": 6 },
+                { "City": "Hist", "Month": "202009", "Number": 7 },
+                { "City": "Hist", "Month": "202010", "Number": 8 },
+                { "City": "Hist", "Month": "202011", "Number": 9 },
+                { "City": "Proj", "Month": "202012", "Number": 10 },
+                { "City": "Proj", "Month": "202101", "Number": 11 },
+                { "City": "Proj", "Month": "202102", "Number": 12 }
+            ];
+            var world = [2415, 2548, 2553, 2644, 2794, 2939, 3076, 3219, 3322, 3503, 3737, 4047, 4210, 4406, 4640, 4620,
+                4613, 4858, 4991, 5174, 5312, 5286, 5142, 5104, 5152, 5302, 5490, 5568, 5749, 5968, 6057, 6195, 6324, 6126, 6191, 6235, 6368,
+                6564, 6602, 6581, 6668, 6856, 6914, 7072, 7417, 7770, 8027, 8290, 8541, 8719, 8587, 9043, 9337, 9487, 9549, 9619, 9610, 9613,
+                9742.4533, 9939.877649, 9945.622216]
+
+            chartdata = world.map((w, idx) => ({ "City": "Golbal", "Year": idx + 1959, "Number": w }))
+
+            var svg = dimple.newSvg("#chartContainer", 800, 370); // The chart is an svg variable assigned to the chartcontainer div. It's width and height are also assigned here
+
+            var myChart = new dimple.chart(svg, chartdata);  // Create the chart
+            myChart.setBounds(50, 10, 700, 280);            // Set the chart bounds within the svg container
+
+            myChart.defaultColors = [
+                new dimple.color("#54aae3"),
+                new dimple.color("#54aae3")
+            ];
+
+            var x = myChart.addTimeAxis("x", "Year", '%Y', '%Y');  // Define the x axis. The latter statements define the date format which we want to be year only
+            // x.timeInterval = 10;
+            x.addOrderRule("Date");
+
+            var y = myChart.addMeasureAxis("y", "Number"); // Define the y axis
+            y.ticks = 6;
+            y.title = 'Global co2 emission'
+
+            var s = myChart.addSeries('City', dimple.plot.line);
+            s.lineMarkers = true;
+            s.interpolation = "cardinal";
+
+            myChart.draw(500); // Draw the chart. The number is the animation delay in miliseconds
+
+            svg.selectAll("path.dimple-proj").style("stroke-dasharray", "2"); // Some minor stying changes using the svg selectAll statement. Make the projected data a dashed line and the grid colour lighter.
+            svg.selectAll("path.domain").style("stroke", "#CCC");
+            svg.selectAll("g.tick line").style("stroke", "#CCC");
+
+        });
+    </script>
+
+</body>
+
+</html>

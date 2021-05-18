@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Create a time slider</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.js"></script>
+
+    <script charset="utf-8" src="https://d3js.org/d3.v4.min.js"></script>
+    <script charset="utf-8" src="https://cdnjs.cloudflare.com/ajax/libs/dimple/2.3.0/dimple.latest.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <style>
+        .map-overlay {
+            font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+            position: absolute;
+            width: 400px;
+            top: 0;
+            left: 0;
+            padding: 10px;
+        }
+
+        .map-overlay .map-overlay-inner {
+            /* background-color: #fff; */
+            background-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .map-overlay h2 {
+            line-height: 24px;
+            display: block;
+            margin: 0 0 10px;
+        }
+
+        .map-overlay .legend .bar {
+            height: 10px;
+            width: 100%;
+            /* background: linear-gradient(to right, #f3b344, #7f3121); */
+            background: linear-gradient(to right, yellow, red);
+        }
+
+        .map-overlay input {
+            background-color: transparent;
+            display: inline-block;
+            width: 100%;
+            position: relative;
+            margin: 0;
+            cursor: ew-resize;
+        }
+    </style>
+
+    <div id="map"></div>
+
+    <div class="map-overlay top">
+        <div class="map-overlay-inner">
+            <h2>ETS</h2>
+            <div>Year.<label id="num"></label></div>
+            <input id="slider" type="range" min="0" max="13" step="1" value="0">
+            <div id="legend" class="legend">
+                <label>Legend (ICAP Allowance Price)</label>
+                <div class="bar"></div>
+                <div>
+                    0($)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;~
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;40($)
+                </div>
+            </div>
+            <div id="chartContainer">
+                <p id="charttitle">Region</p>
+                <!-- <p id="chartsubhead">sub title here.</p> -->
+                <p><select id="CityMenu">
+                        <option>Change Region Here:</option>
+                    </select></p>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZXJpY2NoZW4xMTEiLCJhIjoiY2tqdmR5NW5oMDd3bzJwcXUzbzl0NnhuZiJ9.H7nc2-mqix-sjkoAtIB-nA';
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/light-v10', //dark,light
+            center: [31.4606, 20.7927],
+            zoom: 0.5
+        });
+
+        var dates = ['2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021'];
+
+        var field = '2008';
+
+        function filterBy(index) {
+            map.removeLayer('datas-circles')
+            addMyLayer(dates[index], 0.75)
+            document.getElementById('num').textContent = dates[index];
+        }
+
+        function addMyLayer(field, opacity) {
+            map.addLayer({
+                'id': 'datas-circles',
+                'type': 'circle',
+                'source': 'datas',
+                'paint': {
+                    'circle-color': [
+                        'interpolate',
+                        ['linear'],
+                        ['get', field],
+                        0,
+                        'yellow',
+                        // '#f3b344',
+                        40,
+                        // '#7F3121'
+                        'red'
+                    ],
+                    'circle-opacity': opacity,
+                    'circle-radius': [
+                        'interpolate',
+                        ['linear'],
+                        ['get', field],
+                        0,
+                        0,
+                        3,
+                        2,
+                        5,
+                        3,
+                        10,
+                        5,
+                        20,
+                        8,
+                        30,
+                        12,
+                        40,
+                        15
+                    ]
+                }
+            });
+        }
+
+        map.on('load', function () {
+            d3.json(
+                'http://lish.cool:8002/data/mapbox/mapbox6_map.geojson',
+                function (err, data) {
+                    if (err) throw err;
+                    console.log(data)
+                    // dates = Object.keys(data.features[0].properties)
+                    // dates = dates.slice(4, dates.length - 1)
+                    // console.log(dates)
+
+                    map.addSource('datas', {
+                        'type': 'geojson',
+                        data: data
+                    });
+
+                    addMyLayer(field, 0.01)
+
+                    map.addLayer({
+                        'id': 'datas-labels',
+                        'type': 'symbol',
+                        'source': 'datas',
+                        'layout': {
+                            'text-field': [
+                                'concat',
+                                // ['to-string', ['get', 'Province/State']],
+                                ['to-string', ['get', 'region']]
+                            ],
+                            'text-font': [
+                                'Open Sans Bold',
+                                'Arial Unicode MS Bold'
+                            ],
+                            'text-size': 8
+                        },
+                        'paint': {
+                            'text-color': 'rgba(0,0,0,0.8)'
+                        }
+                    });
+
+                    document
+                        .getElementById('slider')
+                        .addEventListener('input', (e) => {
+                            var index = parseInt(e.target.value, 10);
+                            filterBy(index);
+
+                        });
+                }
+            );
+
+
+            var popup = new mapboxgl.Popup({
+                closeButton: false,
+                closeOnClick: false
+            });
+            map.on('click', function (e) {
+                var features = map.queryRenderedFeatures(e.point);
+                console.log(features)
+                if(!features[0]) return;
+                let region = features[0].properties.region
+                if(!region) return;
+                let title = '',status = '',desc='';
+
+                if(region === 'EU ETS'){
+                    title = `EU ETS xxx`;
+                    status = `xxxx`;
+                    desc = `Shanghai Pilot ETS Implementation Plan Trial
+Measures for Management of Emissions Trading in Shanghai
+Shanghai EEB- Allocation Plan for Vintage 2019 (including list of covered entities)`;
+                }else if(region === 'New Zeland ETS'){
+                    title = `EU ETS xxx`;
+                    status = `xxxx`;
+                    desc = `Shanghai Pilot ETS Implementation Plan Trial
+Measures for Management of Emissions Trading in Shanghai
+Shanghai EEB- Allocation Plan for Vintage 2019 (including list of covered entities)`;
+                }else if(region === 'California'){
+                    title = `EU ETS xxx`;
+                    status = `xxxx`;
+                    desc = `Shanghai Pilot ETS Implementation Plan Trial
+Measures for Management of Emissions Trading in Shanghai
+Shanghai EEB- Allocation Plan for Vintage 2019 (including list of covered entities)`;
+                }else if(region === 'Quebec'){
+                    title = `EU ETS xxx`;
+                    status = `xxxx`;
+                    desc = `Shanghai Pilot ETS Implementation Plan Trial
+Measures for Management of Emissions Trading in Shanghai
+Shanghai EEB- Allocation Plan for Vintage 2019 (including list of covered entities)`;
+                }else if(region === 'Ontario'){
+                    title = `EU ETS xxx`;
+                    status = `xxxx`;
+                    desc = `Shanghai Pilot ETS Implementation Plan Trial
+Measures for Management of Emissions Trading in Shanghai
+Shanghai EEB- Allocation Plan for Vintage 2019 (including list of covered entities)`;
+                }else if(region === 'New Zeland ETS'){
+                    title = `EU ETS xxx`;
+                    status = `xxxx`;
+                    desc = `Shanghai Pilot ETS Implementation Plan Trial
+Measures for Management of Emissions Trading in Shanghai
+Shanghai EEB- Allocation Plan for Vintage 2019 (including list of covered entities)`;
+                }else if(region === 'South Korea'){
+                    title = `EU ETS xxx`;
+                    status = `xxxx`;
+                    desc = `Shanghai Pilot ETS Implementation Plan Trial
+Measures for Management of Emissions Trading in Shanghai
+Shanghai EEB- Allocation Plan for Vintage 2019 (including list of covered entities)`;
+                }else if(region === 'Switzerland'){
+                    title = `EU ETS xxx`;
+                    status = `xxxx`;
+                    desc = `Shanghai Pilot ETS Implementation Plan Trial
+Measures for Management of Emissions Trading in Shanghai
+Shanghai EEB- Allocation Plan for Vintage 2019 (including list of covered entities)`;
+                }else if(region === 'Regional Greenhouse gas initiative'){
+                    title = `EU ETS xxx`;
+                    status = `xxxx`;
+                    desc = `Shanghai Pilot ETS Implementation Plan Trial
+Measures for Management of Emissions Trading in Shanghai
+Shanghai EEB- Allocation Plan for Vintage 2019 (including list of covered entities)`;
+                }else if(region === 'China'){
+                    title = `EU ETS xxx`;
+                    status = `xxxx`;
+                    desc = `Shanghai Pilot ETS Implementation Plan Trial
+Measures for Management of Emissions Trading in Shanghai
+Shanghai EEB- Allocation Plan for Vintage 2019 (including list of covered entities)`;
+                }
+
+                popup.remove()
+                popup.setLngLat(e.lngLat).setHTML(`
+                        <div>
+                            <b>${title}</b></br>
+                            <a style='color:#0B66AC'><b>Status:</b>${status}</a></br>
+                            <p>${desc}</p>
+                        </div>`
+                ).addTo(map);
+            });
+
+        });
+
+
+
+        //图表线
+
+        d3.csv("http://lish.cool:8002/data/mapbox/mapbox6_data.csv", function (CityData) {
+            var chartdata;
+            var cityMenu = document.getElementById("CityMenu");
+            for (var i = 0; i < CityData.length; i++) {            // In this loop we add the names of all the Cities in the CSV to the drop down menu
+                var el = document.createElement("option");
+                el.textContent = "Region, " + CityData[i].region;
+                el.value = i;
+                cityMenu.appendChild(el);
+            }
+
+            function SetCityData(index) {   // Function that extracts the population timeseries for the selected city
+
+                console.log(CityData[index]); // Show the data of the row in the console
+
+                // document.getElementById("charttitle").innerHTML = "Region, " + CityData[index].region // The name of the city and country is inserted into the chart title
+
+                // Dimple requires each data point on a time series to be a separate row. Below we insert the population data from the CityData array into a new array of JSON objects in the required format
+                chartdata = [
+                    { "City": "Hist", "Year": "2008", "Number": parseInt(CityData[index]['2008']) },
+                    { "City": "Hist", "Year": "2009", "Number": parseInt(CityData[index]['2009']) },
+                    { "City": "Hist", "Year": "2010", "Number": parseInt(CityData[index]['2010']) },
+                    { "City": "Hist", "Year": "2011", "Number": parseInt(CityData[index]['2011']) },
+                    { "City": "Hist", "Year": "2012", "Number": parseInt(CityData[index]['2012']) },
+                    { "City": "Hist", "Year": "2013", "Number": parseInt(CityData[index]['2013']) },
+                    { "City": "Hist", "Year": "2014", "Number": parseInt(CityData[index]['2014']) },
+                    { "City": "Hist", "Year": "2015", "Number": parseInt(CityData[index]['2015']) },
+                    { "City": "Hist", "Year": "2016", "Number": parseInt(CityData[index]['2016']) },
+                    { "City": "Hist", "Year": "2017", "Number": parseInt(CityData[index]['2017']) },
+                    { "City": "Hist", "Year": "2018", "Number": parseInt(CityData[index]['2018']) },
+                    { "City": "Hist", "Year": "2019", "Number": parseInt(CityData[index]['2019']) },
+                    { "City": "Hist", "Year": "2020", "Number": parseInt(CityData[index]['2020']) },
+                    { "City": "Hist", "Year": "2021", "Number": parseInt(CityData[index]['2021']) }
+                ];
+
+            }
+
+            SetCityData(0);
+
+            var svg = dimple.newSvg("#chartContainer", 400, 300); // The chart is an svg variable assigned to the chartcontainer div. It's width and height are also assigned here
+
+            var myChart = new dimple.chart(svg, chartdata);  // Create the chart
+            myChart.setBounds(60, 15, 300, 200);            // Set the chart bounds within the svg container
+
+            myChart.defaultColors = [
+                new dimple.color("#54aae3"),
+                new dimple.color("#54aae3")
+            ];
+
+            var x = myChart.addTimeAxis("x", "Year", '%Y', '%Y');  // Define the x axis. The latter statements define the date format which we want to be year only
+            // x.timeInterval = 10;
+            x.addOrderRule("Date");
+
+            var y = myChart.addMeasureAxis("y", "Number"); // Define the y axis
+            y.ticks = 6;
+            y.title = 'ETS'
+
+            var s = myChart.addSeries('City', dimple.plot.line);
+            s.lineMarkers = true;
+            s.interpolation = "cardinal";
+
+            myChart.draw(500); // Draw the chart. The number is the animation delay in miliseconds
+
+            svg.selectAll("path.dimple-proj").style("stroke-dasharray", "2"); // Some minor stying changes using the svg selectAll statement. Make the projected data a dashed line and the grid colour lighter.
+            svg.selectAll("path.domain").style("stroke", "#CCC");
+            svg.selectAll("g.tick line").style("stroke", "#CCC");
+
+            document.getElementById("CityMenu").onchange = function () {    // This is the event listener that runs when the user changes the menu
+                var x = document.getElementById("CityMenu").value;
+                console.log(x);
+                SetCityData(x);   // Run the function that will update chartdata with the user selected city
+
+                svg.selectAll(".dimple-marker,.dimple-marker-back").remove(); // There's a bug where it doesn't remove the markers from the previous series. 
+
+                myChart.data = chartdata; // Update the chart with the new chartdata
+                myChart.draw(500);
+            }
+
+        });
+    </script>
+
+</body>
+
+</html>

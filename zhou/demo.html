@@ -1,0 +1,315 @@
+<html lang="en"><head>
+    <title>Mobile Spam - Interactive Map | AdaptiveMobile</title>
+    <meta name="description" content="AdaptiveMobile, global leader in mobile network security, has developed a an interactive mobile spam globe to illustrate how messaging attacks develop.">
+    <meta charset="utf-8">
+    <style type="text/css">
+      html {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        background: #000000 url(/spamglobe/images/loading.gif) center center no-repeat;
+        color: #ffffff;
+        font-family: sans-serif;
+        font-size: 13px;
+        line-height: 20px;
+        height: 100%;
+      }
+
+      #info {
+        font-size: 11px;
+        position: absolute;
+        bottom: 5px;
+        background-color: rgba(0,0,0,0.8);
+        border-radius: 3px;
+        right: 10px;
+        padding: 10px;
+
+      }
+
+      #currentInfo {
+        width: 270px;
+        position: absolute;
+        left: 20px;
+        top: 140px;
+        padding: 10px;
+      }
+	  
+	 #dataSelectDropdown {
+        width: 350px;
+        position: absolute;
+        left: 20px;
+        top: 85px;
+        border-top: 1px solid rgba(255,255,255,0.4);
+		border-bottom: 1px solid rgba(255,255,255,0.4);
+        padding: 10px;
+      }
+
+      a {
+        color: #aaa;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+
+      .bull {
+        padding: 0 5px;
+        color: #555;
+      }
+
+      #title {
+        position: absolute;
+        top: 20px;
+        width: 380px;
+        left: 20px;
+        background-color: rgba(0,0,0,0.2);
+        border-radius: 3px;
+        font: 20px Georgia;
+        padding: 10px;
+      }
+
+      .week {
+        font: 11px Verdana, Geneva, sans-serif;
+        line-height: 30px;
+        height: 30px;
+        text-align: left;
+        float: left;
+        width: 150px;
+        color: rgba(255, 255, 255, 0.4);
+        cursor: pointer;
+        -webkit-transition: all 0.1s ease-out;
+      }
+
+      .week:hover, .week.active {
+        font-size: 13px;
+        color: #fff;
+      }
+	  
+	  #dataSelection option {
+		  background: #466c41;
+	  }
+
+	  
+	  select {
+		  background: #466c41;
+		  border: 1px #CCCCCC;
+		  color: #FFF;
+		  line-height:25px;
+		  width:220px;
+	  }
+
+      #ams span {
+        display: none;
+      }
+
+      #ams {
+        width: 168px;
+        height: 99px;
+        display: block;
+        position: absolute;
+        bottom: 15px;
+        left: 20px;
+        background: url(/spamglobe/images/ams_logo.png);
+      }
+
+
+    </style>
+  </head>
+  <body style="background-image: none;">
+  
+  <div id="title">
+   <img src="images/heading.gif" alt="North American Mobile Spam" width="426" height="42">
+  </div>
+
+  <div id="container" style="color: rgb(255, 255, 255); font: 13px / 20px Arial, sans-serif; cursor: auto;"><canvas width="1950" height="1844" style="width: 975px; height: 922px; position: absolute;"></canvas></div>
+
+  <div id="info">
+    <strong><a href="http://www.chromeexperiments.com/globe">Uses Google WebGL Globe</a></strong> <span class="bull">•</span>&nbsp;Created by <a href="https://twitter.com/mcdaidc"><strong>Cathal Mc Daid / @mcdaidc</strong></a> <span class="bull">•</span> Location method based on <a href="http://www.adaptivemobile.com/blog/visualizing-spam">NANPA Geolocation</a>
+  </div>
+
+ <div id="dataSelectDropdown">
+  	<script type="text/javascript">
+	 	function updateGlobeData(){
+			var theSelection = document.getElementById("dataSelection").selectedIndex;
+			
+				
+			if (theSelection == 0){
+				
+				loadData('/spamglobe/data/WeeklyOctNovDecGlobal_sender.json');
+			}else{
+				
+				loadData('/spamglobe/data/WeeklyOctNovDecGlobal.json');
+			}
+		}
+	 </script>
+ 
+	<select name="dataSelection" id="dataSelection" onchange="updateGlobeData()">
+        <option value="0">Spam locations sent</option>
+        <option value="1">Spam locations received</option>
+    </select>
+    
+    
+     
+     </div>
+   <div id="currentInfo">
+    <span id="week1" class="week active">Week 30/Sep</span>
+    <span id="week2" class="week">Week 7/Oct</span>
+	<span id="week3" class="week">Week 14/Oct</span>
+    <span id="week4" class="week">Week 21/Oct</span>
+	<span id="week5" class="week">Week 28/Oct</span>
+    <span id="week6" class="week">Week 4/Nov</span>
+	<span id="week7" class="week">Week 11/Nov</span>
+    <span id="week8" class="week">Week 18/Nov</span>
+	<span id="week9" class="week">Week 25/Nov</span>
+    <span id="week10" class="week">Week 2/Dec</span>
+	<span id="week11" class="week">Week 9/Dec</span>
+    <span id="week12" class="week">Week 16/Dec</span>
+	<span id="week13" class="week">Week 23/Dec</span>
+  </div>
+
+  
+
+ 
+  <a id="ams" href="http://www.adaptivemobile.com">
+    <span>AdaptiveMobile</span>
+  </a>
+
+  <script type="text/javascript" src="/spamglobe/third-party/Detector.js"></script>
+  <script type="text/javascript" src="/spamglobe/third-party/three.min.js"></script>
+  <script type="text/javascript" src="/spamglobe/third-party/Tween.js"></script>
+  <script type="text/javascript" src="/spamglobe/globe.js"></script>
+  <script type="text/javascript">
+
+    if(!Detector.webgl){
+      Detector.addGetWebGLMessage();
+    } else {
+
+	
+	var colors = [0x32cd32];
+    var weeks = ['1','2','3','4','5','6','7','8','9','10','11','12','13'];
+    var container = document.getElementById('container');
+	//Disabling old automatic colour choosing system
+    //var globe = new DAT.Globe(container);
+	//var globe = new DAT.Globe(container, function(x){
+	//return new THREE.Color(0x32cd32);
+	//});
+	  
+	var globe;
+	  
+      //console.log(globe);
+     
+      
+	  loadData('/spamglobe/data/WeeklyOctNovDecGlobal_sender.json');
+      
+     
+    }
+	
+	function clearData()
+	{
+		var myNode = document.getElementById("container");
+		while (myNode.firstChild) {
+			myNode.removeChild(myNode.firstChild);
+		}
+	}
+	
+	function loadData(url)
+	{
+		
+		document.body.style.backgroundImage = "url('/spamglobe/loading.gif')";
+		clearData();
+		
+		var xhr;
+		xhr = new XMLHttpRequest();
+      xhr.open('GET', url, true);
+      xhr.onreadystatechange = function(e) {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            var data = JSON.parse(xhr.responseText);
+            window.data = data;
+			 
+			globe = new DAT.Globe(container, function(x){
+			return new THREE.Color(0x32cd32);
+			});
+			 /*
+			 var i, tweens = [];
+     
+      var settime = function(globe, t) {
+        return function() {
+          new TWEEN.Tween(globe).to({time: t/weeks.length},500).easing(TWEEN.Easing.Linear.EaseNone).start();
+          var y = document.getElementById('week'+weeks[t]);
+          if (y.getAttribute('class') === 'week active') {
+            return;
+          }
+          var yy = document.getElementsByClassName('week');
+          for(i=0; i<yy.length; i++) {
+            yy[i].setAttribute('class','week');
+          }
+          y.setAttribute('class', 'week active');
+        };
+      };
+	
+	 */
+	   var change = function(i) {
+            return function() {
+				console.log(i);
+                globe.resetData();
+				console.log(i);
+                globe.addData(data[i][1], {format: 'magnitude'});
+                globe.createPoints();
+                globe.animate();
+				
+				
+				var y = document.getElementById('week'+weeks[i]);
+				  if (y.getAttribute('class') === 'week active') {
+					return;
+				  }
+				
+               var yy = document.getElementsByClassName('week');
+			  for(var j=0; j<yy.length; j++) {
+				yy[j].setAttribute('class','week');
+			  }
+			  y.setAttribute('class', 'week active');
+            };
+        }
+		
+		globe.addData(data[0][1], {format: 'magnitude'});
+
+		
+	    
+      
+      for(var i = 0; i<weeks.length; i++) {
+        var y = document.getElementById('week'+weeks[i]);
+        y.addEventListener('click', change(i), false);
+		y.setAttribute('class','week');
+		console.log("add click " +i);
+      }
+	  
+	  document.getElementById("week1").setAttribute('class', 'week active');
+      
+     /*
+     TWEEN.start();
+			
+			 
+            for (i=0;i<data.length;i++) {
+              globe.addData(data[i][1],{format: 'magnitude', name: data[i][0], animated: true});
+            }
+			*/
+            globe.createPoints();
+            //settime(globe,0)();
+			//globe.time= 0;
+            globe.animate();
+            document.body.style.backgroundImage = 'none'; // remove loading
+          }
+        }
+      };
+      xhr.send(null);
+	}
+
+  </script>
+
+  
+
+
+</body></html>
